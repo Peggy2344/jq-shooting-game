@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Permanent+Marker&display=swap"
+        rel="stylesheet" />
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            background: linear-gradient(to right, #4da0b0 50%, #d39d38 50%);
+            font-family: 'Permanent Marker', cursive;
+        }
+
+        #game {
+            margin: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        #gun {
+            width: 100px;
+            position: absolute;
+            right: 0;
+        }
+
+        #game_area {
+            width: 740px;
+            height: 700px;
+            border: 10px solid #997b66;
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+            background-image: url(./bg2.jpg);
+            background-size: cover;
+        }
+
+        #time_board {
+            margin-right: 100px;
+            font-size: 3rem;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: translateY(0px) rotate(0);
+            }
+
+            50% {
+                transform: translateY(-590px) rotate(360deg);
+            }
+
+            100% {
+                transform: translateY(150px) rotate(720deg);
+            }
+        }
+
+        @keyframes up {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-590px);
+            }
+
+            100% {
+                transform: translateY(150px);
+            }
+        }
+
+        @keyframes move {
+            from {
+                left: 550px;
+            }
+
+            to {
+                left: 0;
+            }
+        }
+
+        .rotate {
+            animation: rotate 3s ease-in forwards;
+            position: absolute;
+        }
+
+        .up {
+            animation: up 3s ease-in forwards;
+            position: absolute;
+        }
+
+        .shoot {
+            width: 60px;
+            height: 30px;
+            background-image: url(./gun2.png);
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: absolute;
+        }
+
+        .move {
+            animation: move 0.4s linear forwards;
+        }
+
+        .notClick {
+            pointer-events: none;
+        }
+
+        #sideBar {
+            height: 700px;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #start {
+            width: 120px;
+            height: 50px;
+            font-size: 1.8rem;
+            line-height: 10px;
+            text-align: center;
+            display: inline-block;
+            margin: 5px;
+            font-weight: bold;
+            padding: 10px 10px 10px 10px;
+            background-color: lightgray;
+            color: gray;
+            border: gray;
+            border-radius: 10px;
+            box-shadow: 0 0.2em gray;
+            cursor: pointer;
+        }
+        #start:focus{
+            outline: none;
+        }
+        #start:active {
+            box-shadow: none;
+            position: relative;
+            top: 0.2em;
+        }
+        #record_board label{
+            font-size: 1.5rem;
+        }
+        #record_board span{
+            font-size: 1.5rem;
+            margin-left: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game">
+        <div id="time_board">
+            <div class="score">
+                score
+                <div id="score">0</div>
+            </div>
+            <div class="time">
+                time
+                <div id="time">0</div>
+            </div>
+        </div>
+        <div id="game_area">
+            <img id="gun" src="./gun.png" />
+        </div>
+        <div id="sideBar">
+            <button type="button" id="start">start</button>
+            <div id="record_board">
+                <h1>Highest record</h1>
+                <div><label>Name</label><span id="name"></span></div>
+                <div><label>Score</label><span id="record_score"></span></div>
+            </div>
+        </div>
+    </div>
+    <script src="./jquery-3.5.1.min.js"></script>
+    <script>
+        const player_name = document.getElementById('name')
+        const player_score = document.getElementById('record_score')
+        let score = 0
+        let time = 30
+        let id = 0
+        let num = 0
+        let shoots = []
+        let bottles = []
+        let gun = document.getElementById('gun')
+        let game_area = document.getElementById('game_area')
+        let isClick = true
+        let highscore = { name: '', score: 0 }
+        let bottle_gameStorage = JSON.parse(localStorage.getItem('bottle_game'))
+        if(bottle_gameStorage !== null) {
+        highscore = bottle_gameStorage
+        player_name.innerText = highscore.name
+        player_score.innerText = highscore.score
+        }
+        const rand = (num) => {
+            return Math.floor(Math.random() * num)
+        }
+        function attack() {
+            if (!isClick) return
+            isClick = false
+            setTimeout(function () {
+                isClick = true
+            }, 300)
+            $('#game_area').append(`<div id='shoot${num}' class='shoot'></div>`)
+            $(`#shoot${num}`).css({
+                top: parseInt(gun.style.top) + gun.offsetHeight / 3 + 'px',
+                right: '100px',
+            })
+            $(`#shoot${num}`).addClass('move')
+            shoots.push($(`#shoot${num}`))
+            num++
+        }
+        function mousemoveHanlder(e) {
+            if (
+                e.clientY + 35 > game_area.offsetTop + game_area.offsetHeight ||
+                e.clientY - 40 < game_area.offsetTop
+            )
+                return
+            gun.style.top = `${e.pageY - game_area.offsetTop - 50}px`
+            gun.style.left = `${game_area.offsetWidth - gun.offsetWidth - 35}px`
+        }
+        function createBottle () {
+            if (rand(10) > 3) {
+                $('#game_area').append(
+                    `<img style='width:120px' class='bottle' id='bottle${id}' src='./bottle.png'>`
+                )
+                $(`#bottle${id}`).css({
+                    top: 570,
+                    left: rand(70) + '%',
+                })
+                rand(10) > 5
+                    ? $(`#bottle${id}`).addClass('rotate')
+                    : $(`#bottle${id}`).addClass('up')
+                bottles.push($(`#bottle${id}`))
+                id++
+                }
+            }
+        function timer () {
+            time--
+            $('#time').text(time)
+            if (time === 0) {
+                clearInterval(createTimer)
+                clearInterval(timeLeft)
+                setTimeout(() => {
+                    clearInterval(crash)
+                    $('#game_area .bottle').remove()
+                    gun.style.top = 0
+                }, 1000)
+                $('#start').attr('disabled', false)
+                $('#game_area').addClass('notClick')
+                window.removeEventListener('mousemove', mousemoveHanlder)
+                if(bottle_gameStorage === null || highscore.score < score) {
+                const name = prompt('最高分! 請輸入你的名字')
+                highscore.score = score
+                highscore.name = name || '路人'
+        
+                localStorage.setItem('bottle_game', JSON.stringify(highscore))
+                player_name.innerText = highscore.name
+                player_score.innerText = highscore.score
+                }
+            }
+        }
+        function crashHandler() {
+            //碰到牆壁
+            for (let shoot of shoots) {
+                if (shoot.position().left === 0) {
+                    shoot.remove()
+                    shoots.splice(shoots.indexOf(shoot), 1)
+                }
+                for (let bottle of bottles) {
+                    let shootLeft = shoot.offset().left
+                    let bottleLeft = bottle.offset().left
+                    let shootTop = shoot.offset().top
+                    let bottleTop = bottle.offset().top
+                    if (shootLeft > bottleLeft && shootLeft < bottleLeft + 50) {
+                        if (shootTop > bottleTop - 50 && shootTop < bottleTop + 100) {
+                            shoot.remove()
+                            bottle.remove()
+                            bottle.hasClass('rotate') ? (score += 10) : score++
+                            $('#score').text(score)
+                            shoots.splice(shoots.indexOf(shoot), 1)
+                            bottles.splice(bottles.indexOf(bottle), 1)
+                        }
+                    }
+                }
+            }
+        }
+        function spaceHandler(e) {
+            if (e.keyCode === 32 && time != 0) {
+                attack()
+            }
+        }
+        
+        $('#start').click(function () {
+            $(this).attr('disabled', true)
+            score = 0
+            $('#score').text(score)
+            time = 30
+            $('#time').text(time)
+            bottles = []
+            $('#game_area').removeClass('notClick')
+            //控制手槍方向
+            window.addEventListener('mousemove', mousemoveHanlder)
+            createTimer = setInterval(createBottle, 600)
+            timeLeft = setInterval(timer, 1000)
+            crash = setInterval(crashHandler, 10)
+            $('#game_area').click(attack)
+            window.addEventListener('keyup', spaceHandler)
+        })
+    </script>
+</body>
+
+</html>
